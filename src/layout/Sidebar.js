@@ -8,22 +8,22 @@ function Sidebar() {
       color: "#fff",
       padding: 20
     }}>
-      <h2 style={{ marginBottom: 30 }}>RBL</h2>
+      <h2>RBL</h2>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-        <Link to="/" style={linkStyle}>📊 Dashboard</Link>
-        <Link to="/fahrer" style={linkStyle}>👨‍✈️ Fahrer</Link>
-        <Link to="/linien" style={linkStyle}>🚌 Linien</Link>
+      <nav style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <Link to="/" style={link}>📊 Dashboard</Link>
+        <Link to="/fahrer" style={link}>👨‍✈️ Fahrer</Link>
+        <Link to="/linien" style={link}>🚌 Linien</Link>
+        <Link to="/routen" style={link}>🧭 Routen</Link>
       </nav>
     </div>
   );
 }
 
-const linkStyle = {
+const link = {
   color: "#ccc",
   textDecoration: "none",
-  padding: "8px 10px",
-  borderRadius: 5,
+  padding: 8
 };
 
 export default Sidebar;

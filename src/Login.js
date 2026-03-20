@@ -8,7 +8,7 @@ function Login({ onLogin }) {
     if (user === "admin" && pass === "admin") {
       onLogin();
     } else {
-      alert("Login fehlgeschlagen");
+      alert("Falsch");
     }
   };
 
@@ -20,11 +20,11 @@ function Login({ onLogin }) {
       alignItems: "center",
       background: "#1e1e2f"
     }}>
-      <div style={{ background: "#2c2c3e", padding: 40 }}>
-        <h2>RBL Backoffice</h2>
+      <div style={{ background: "#2c2c3e", padding: 30 }}>
+        <h2 style={{color:"white"}}>Login</h2>
 
-        <input placeholder="Benutzer" onChange={(e)=>setUser(e.target.value)} /><br/><br/>
-        <input type="password" placeholder="Passwort" onChange={(e)=>setPass(e.target.value)} /><br/><br/>
+        <input placeholder="User" onChange={e=>setUser(e.target.value)} /><br/>
+        <input type="password" placeholder="Pass" onChange={e=>setPass(e.target.value)} /><br/>
 
         <button onClick={login}>Login</button>
       </div>
