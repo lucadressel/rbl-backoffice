@@ -9,19 +9,16 @@ function Sidebar() {
       padding: 20
     }}>
       
-      {/* LOGO */}
       <div style={{ textAlign: "center", marginBottom: 30 }}>
-        <img src="/logo.png" width="120" alt="logo" />
-        <div style={{ marginTop: 10, fontWeight: "bold" }}>
-          RBL Backoffice
-        </div>
+        <img src="/logo.png" width="100" />
+        <div>RBL Backoffice</div>
       </div>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <Link to="/" style={link}>📊 Dashboard</Link>
-        <Link to="/fahrer" style={link}>👨‍✈️ Fahrer</Link>
-        <Link to="/linien" style={link}>🚌 Linien</Link>
-        <Link to="/routen" style={link}>🧭 Routen</Link>
+        <Link to="/" style={link}>Dashboard</Link>
+        <Link to="/fahrer" style={link}>Fahrer</Link>
+        <Link to="/linien" style={link}>Linien</Link>
+        <Link to="/routen" style={link}>Routen</Link>
       </nav>
     </div>
   );
@@ -30,8 +27,7 @@ function Sidebar() {
 const link = {
   color: "#ccc",
   textDecoration: "none",
-  padding: 8,
-  borderRadius: 5
+  padding: 8
 };
 
 export default Sidebar;

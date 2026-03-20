@@ -11,7 +11,7 @@ function Topbar({ onLogout }) {
     }}>
       
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <img src="/logo.png" width="30" alt="logo" />
+        <img src="/logo.png" width="30" />
         <strong>RBL Backoffice</strong>
       </div>
 
