@@ -1,4 +1,4 @@
-function Topbar() {
+function Topbar({ onLogout }) {
   return (
     <div style={{
       height: 50,
@@ -9,8 +9,13 @@ function Topbar() {
       padding: "0 20px",
       color: "#fff"
     }}>
-      <div>🚦 RBL Leitstelle</div>
-      <button>Logout</button>
+      
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <img src="/logo.png" width="30" alt="logo" />
+        <strong>RBL Backoffice</strong>
+      </div>
+
+      <button onClick={onLogout}>Logout</button>
     </div>
   );
 }
