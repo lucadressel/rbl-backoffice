@@ -2,37 +2,36 @@ import { useState } from "react";
 
 function Fahrer() {
   const [fahrer, setFahrer] = useState([
-    { id: 1, name: "Max Mustermann" },
-    { id: 2, name: "Test Fahrer" }
+    { id: 1, name: "Max Mustermann", firma: "DB", status: "Vollzeit" }
   ]);
 
   const [selected, setSelected] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [name, setName] = useState("");
+
+  const [form, setForm] = useState({
+    name: "",
+    firma: "",
+    status: ""
+  });
 
   // ➕ NEU
   const neuHandler = () => {
-    setName("");
+    setForm({ name: "", firma: "", status: "" });
     setSelected(null);
     setShowModal(true);
   };
 
   // ✏️ BEARBEITEN
   const bearbeitenHandler = () => {
-    if (!selected) {
-      alert("Bitte Fahrer auswählen!");
-      return;
-    }
-    setName(selected.name);
+    if (!selected) return alert("Bitte auswählen");
+
+    setForm(selected);
     setShowModal(true);
   };
 
   // 🗑️ LÖSCHEN
   const loeschenHandler = () => {
-    if (!selected) {
-      alert("Bitte Fahrer auswählen!");
-      return;
-    }
+    if (!selected) return alert("Bitte auswählen");
 
     setFahrer(fahrer.filter(f => f.id !== selected.id));
     setSelected(null);
@@ -41,89 +40,157 @@ function Fahrer() {
   // 💾 SPEICHERN
   const speichern = () => {
     if (selected) {
-      // bearbeiten
-      setFahrer(
-        fahrer.map(f =>
-          f.id === selected.id ? { ...f, name } : f
-        )
-      );
+      setFahrer(fahrer.map(f =>
+        f.id === selected.id ? { ...form } : f
+      ));
     } else {
-      // neu
-      setFahrer([
-        ...fahrer,
-        { id: Date.now(), name }
-      ]);
+      setFahrer([...fahrer, { ...form, id: Date.now() }]);
     }
 
     setShowModal(false);
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Fahrer Editor</h2>
+    <div style={{ display: "flex", height: "100%" }}>
 
-      <button onClick={neuHandler}>➕ Neu</button>
-      <button onClick={bearbeitenHandler}>✏️ Bearbeiten</button>
-      <button onClick={loeschenHandler}>🗑️ Löschen</button>
+      {/* 🔵 LINKE LISTE */}
+      <div style={{
+        width: 300,
+        background: "#1b1b2b",
+        color: "white",
+        padding: 10
+      }}>
+        <h3>Fahrer</h3>
 
-      <table border="1" width="100%" style={{ marginTop: 10 }}>
-        <thead>
-          <tr>
-            <th>Name</th>
-          </tr>
-        </thead>
-        <tbody>
-          {fahrer.map((f) => (
-            <tr
+        <button style={btn} onClick={neuHandler}>➕ Neu</button>
+        <button style={btn} onClick={bearbeitenHandler}>✏️</button>
+        <button style={btnDanger} onClick={loeschenHandler}>🗑️</button>
+
+        <div style={{ marginTop: 10 }}>
+          {fahrer.map(f => (
+            <div
               key={f.id}
               onClick={() => setSelected(f)}
               style={{
+                padding: 10,
+                marginBottom: 5,
                 background:
-                  selected?.id === f.id ? "#d0eaff" : "transparent",
+                  selected?.id === f.id ? "#3a3aff" : "#2a2a40",
                 cursor: "pointer",
+                borderRadius: 5
               }}
             >
-              <td>{f.name}</td>
-            </tr>
+              {f.name}
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      </div>
 
-      {/* 🔥 MODAL */}
+      {/* 🟢 DETAIL PANEL */}
+      <div style={{
+        flex: 1,
+        background: "#22223b",
+        color: "white",
+        padding: 20
+      }}>
+        {selected ? (
+          <>
+            <h2>Fahrer Details</h2>
+
+            <p><strong>Name:</strong> {selected.name}</p>
+            <p><strong>Firma:</strong> {selected.firma}</p>
+            <p><strong>Status:</strong> {selected.status}</p>
+          </>
+        ) : (
+          <h2>Bitte Fahrer auswählen</h2>
+        )}
+      </div>
+
+      {/* 🔥 MODAL (NEU / EDITOR) */}
       {showModal && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          background: "rgba(0,0,0,0.5)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center"
-        }}>
-          <div style={{
-            background: "white",
-            padding: 20,
-            borderRadius: 10,
-            width: 300
-          }}>
+        <div style={modalBg}>
+          <div style={modalBox}>
             <h3>{selected ? "Fahrer bearbeiten" : "Neuer Fahrer"}</h3>
 
+            <label>Name</label>
             <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Name"
-              style={{ width: "100%", marginBottom: 10 }}
+              value={form.name}
+              onChange={(e) =>
+                setForm({ ...form, name: e.target.value })
+              }
             />
 
-            <button onClick={speichern}>💾 Speichern</button>
-            <button onClick={() => setShowModal(false)}>❌ Abbrechen</button>
+            <label>Firma</label>
+            <input
+              value={form.firma}
+              onChange={(e) =>
+                setForm({ ...form, firma: e.target.value })
+              }
+            />
+
+            <label>Arbeitsverhältnis</label>
+            <select
+              value={form.status}
+              onChange={(e) =>
+                setForm({ ...form, status: e.target.value })
+              }
+            >
+              <option value="">Bitte wählen</option>
+              <option>Vollzeit</option>
+              <option>Teilzeit</option>
+              <option>Freelancer</option>
+            </select>
+
+            <div style={{ marginTop: 10 }}>
+              <button style={btn} onClick={speichern}>💾 Speichern</button>
+              <button onClick={() => setShowModal(false)}>Abbrechen</button>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
+
+// 🎨 STYLES
+
+const btn = {
+  background: "#3a3aff",
+  color: "white",
+  border: "none",
+  padding: "6px 10px",
+  marginRight: 5,
+  borderRadius: 5,
+  cursor: "pointer"
+};
+
+const btnDanger = {
+  ...btn,
+  background: "#ff4d4d"
+};
+
+const modalBg = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+  background: "rgba(0,0,0,0.6)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center"
+};
+
+const modalBox = {
+  background: "#1e1e2f",
+  color: "white",
+  padding: 20,
+  borderRadius: 10,
+  width: 350,
+  display: "flex",
+  flexDirection: "column",
+  gap: 5
+};
 
 export default Fahrer;
