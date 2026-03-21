@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 
 function Haltestellen() {
@@ -10,7 +10,17 @@ function Haltestellen() {
     position: null
   });
 
-  // 📍 Klick auf Karte
+  // 🔄 Laden aus Speicher
+  useEffect(() => {
+    const data = JSON.parse(localStorage.getItem("haltestellen"));
+    if (data) setList(data);
+  }, []);
+
+  // 💾 Speichern
+  useEffect(() => {
+    localStorage.setItem("haltestellen", JSON.stringify(list));
+  }, [list]);
+
   function MapClick() {
     useMapEvents({
       click(e) {
@@ -29,17 +39,13 @@ function Haltestellen() {
       return;
     }
 
-    setList([
-      ...list,
-      { id: Date.now(), ...form }
-    ]);
-
+    setList([...list, { id: Date.now(), ...form }]);
     setShowModal(false);
   };
 
   return (
     <div style={{ padding: 20, color: "white" }}>
-      <h2>Haltestellen Editor</h2>
+      <h2>Haltestellen</h2>
 
       <button onClick={() => {
         setForm({ name: "", position: null });
@@ -48,18 +54,16 @@ function Haltestellen() {
         ➕ Neue Haltestelle
       </button>
 
-      {/* Liste */}
       {list.map(h => (
         <div key={h.id} style={{
-          background: "#2a2a40",
-          marginTop: 5,
-          padding: 10
+          background:"#2a2a40",
+          marginTop:5,
+          padding:10
         }}>
           {h.name}
         </div>
       ))}
 
-      {/* MODAL */}
       {showModal && (
         <div style={modalBg}>
           <div style={modalBox}>
@@ -68,18 +72,14 @@ function Haltestellen() {
             <input
               placeholder="Name"
               value={form.name}
-              onChange={(e)=>setForm({...form, name: e.target.value})}
+              onChange={(e)=>setForm({...form, name:e.target.value})}
             />
 
-            {/* 🗺️ KARTE */}
-            <div style={{ height: 300, marginTop: 10 }}>
+            <div style={{ height:300, marginTop:10 }}>
               <MapContainer center={[52.52,13.405]} zoom={13} style={{height:"100%"}}>
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
                 <MapClick />
-
-                {form.position && (
-                  <Marker position={form.position} />
-                )}
+                {form.position && <Marker position={form.position} />}
               </MapContainer>
             </div>
 
@@ -93,7 +93,7 @@ function Haltestellen() {
 }
 
 const modalBg = {
-  position: "fixed",
+  position:"fixed",
   top:0,left:0,
   width:"100%",height:"100%",
   background:"rgba(0,0,0,0.6)"
