@@ -2,17 +2,14 @@ import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
 
 function Routen() {
-
   const [haltestellen, setHaltestellen] = useState([]);
   const [route, setRoute] = useState([]);
 
-  // 🔄 Haltestellen laden
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("haltestellen"));
-    if (data) setHaltestellen(data);
+    const data = JSON.parse(localStorage.getItem("haltestellen")) || [];
+    setHaltestellen(data);
   }, []);
 
-  // ➕ zur Route hinzufügen
   const addStop = (h) => {
     setRoute([...route, h]);
   };
@@ -21,12 +18,7 @@ function Routen() {
     <div style={{ display:"flex", height:"100%" }}>
 
       {/* LISTE */}
-      <div style={{
-        width:300,
-        background:"#1b1b2b",
-        padding:10,
-        color:"white"
-      }}>
+      <div style={{ width:300, background:"#1b1b2b", padding:10, color:"white" }}>
         <h3>Haltestellen</h3>
 
         {haltestellen.map(h => (
@@ -48,17 +40,12 @@ function Routen() {
         <MapContainer center={[52.52,13.405]} zoom={13} style={{height:"100%"}}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
 
-          {/* Haltestellen */}
           {haltestellen.map(h => (
             <Marker key={h.id} position={h.position}/>
           ))}
 
-          {/* Route */}
           {route.length > 1 && (
-            <Polyline
-              positions={route.map(r => r.position)}
-              color="blue"
-            />
+            <Polyline positions={route.map(r => r.position)} color="blue"/>
           )}
         </MapContainer>
       </div>
