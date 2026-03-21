@@ -1,108 +1,63 @@
-import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from "react-leaflet";
-import { useState, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
+import { useState } from "react";
 
 function Routen() {
-  const [punkte, setPunkte] = useState([]);
-  const [gps, setGps] = useState(null);
 
-  // 📍 GPS holen
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        setGps([pos.coords.latitude, pos.coords.longitude]);
-      });
-    }
-  }, []);
+  // DEMO HALTESTELLEN (später Backend)
+  const [haltestellen] = useState([
+    { id:1, name:"Hbf", pos:[52.52,13.405] },
+    { id:2, name:"Markt", pos:[52.525,13.41] },
+    { id:3, name:"Schule", pos:[52.53,13.42] }
+  ]);
 
-  // 🖱️ Klick auf Karte → Punkt hinzufügen
-  function MapClickHandler() {
-    useMapEvents({
-      click(e) {
-        setPunkte((prev) => [
-          ...prev,
-          [e.latlng.lat, e.latlng.lng]
-        ]);
-      },
-    });
-    return null;
-  }
+  const [route, setRoute] = useState([]);
 
-  // 🗑️ Route löschen
-  const resetRoute = () => {
-    if (!window.confirm("Route wirklich löschen?")) return;
-    setPunkte([]);
+  // ➕ Haltestelle zur Route hinzufügen
+  const addToRoute = (h) => {
+    setRoute([...route, h.pos]);
   };
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      
-      {/* 🔵 HEADER */}
-      <div style={{
-        padding: 10,
-        background: "#1b1b2b",
-        color: "white",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
-      }}>
-        <h2 style={{ margin: 0 }}>🧭 Routen Editor</h2>
+    <div style={{ display:"flex", height:"100%" }}>
 
-        <div>
-          <button style={btnDanger} onClick={resetRoute}>🗑️ Route löschen</button>
-        </div>
+      {/* LISTE */}
+      <div style={{ width:250, background:"#1b1b2b", padding:10 }}>
+        <h3 style={{color:"white"}}>Haltestellen</h3>
+
+        {haltestellen.map(h => (
+          <div key={h.id}
+            onClick={()=>addToRoute(h)}
+            style={{
+              padding:10,
+              background:"#2a2a40",
+              marginTop:5,
+              color:"white",
+              cursor:"pointer"
+            }}>
+            {h.name}
+          </div>
+        ))}
       </div>
 
-      {/* 🗺️ KARTE */}
-      <div style={{ flex: 1 }}>
-        <MapContainer
-          center={[52.52, 13.405]} // Berlin
-          zoom={13}
-          style={{ height: "100%", width: "100%" }}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+      {/* KARTE */}
+      <div style={{ flex:1 }}>
+        <MapContainer center={[52.52,13.405]} zoom={13} style={{height:"100%"}}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
 
-          <MapClickHandler />
-
-          {/* 📍 Haltestellen */}
-          {punkte.map((p, i) => (
-            <Marker key={i} position={p} />
+          {/* Haltestellen anzeigen */}
+          {haltestellen.map(h => (
+            <Marker key={h.id} position={h.pos} />
           ))}
 
-          {/* 🔵 Route */}
-          {punkte.length > 1 && (
-            <Polyline positions={punkte} color="#3a3aff" />
-          )}
-
-          {/* 📡 GPS */}
-          {gps && (
-            <Marker position={gps} />
+          {/* Route */}
+          {route.length > 1 && (
+            <Polyline positions={route} color="blue" />
           )}
         </MapContainer>
-      </div>
-
-      {/* 🟢 FOOTER INFO */}
-      <div style={{
-        padding: 10,
-        background: "#111",
-        color: "#aaa"
-      }}>
-        Punkte: {punkte.length} | Klick auf Karte → Haltestellen setzen
       </div>
 
     </div>
   );
 }
-
-// 🎨 BUTTON STYLE
-const btnDanger = {
-  background: "#ff4d4d",
-  color: "white",
-  border: "none",
-  padding: "6px 12px",
-  borderRadius: 5,
-  cursor: "pointer"
-};
 
 export default Routen;
