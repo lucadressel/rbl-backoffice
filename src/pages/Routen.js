@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, Tooltip } from "react-leaflet";
 
 function Routen() {
   const [haltestellen, setHaltestellen] = useState([]);
@@ -41,7 +41,9 @@ function Routen() {
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
 
           {haltestellen.map(h => (
-            <Marker key={h.id} position={h.position}/>
+            <Marker key={h.id} position={h.position}>
+              <Tooltip permanent>{h.name}</Tooltip>
+            </Marker>
           ))}
 
           {route.length > 1 && (

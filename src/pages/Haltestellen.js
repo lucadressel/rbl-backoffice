@@ -1,5 +1,11 @@
-import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { useState, useEffect, useRef } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents,
+  Tooltip
+} from "react-leaflet";
 
 function Haltestellen() {
   const [list, setList] = useState([]);
@@ -10,6 +16,9 @@ function Haltestellen() {
     name: "",
     position: null
   });
+
+  const [search, setSearch] = useState("");
+  const mapRef = useRef();
 
   // 🔄 Laden
   useEffect(() => {
@@ -22,7 +31,7 @@ function Haltestellen() {
     localStorage.setItem("haltestellen", JSON.stringify(list));
   }, [list]);
 
-  // 📍 Map Click
+  // 📍 Klick auf Karte
   function MapClick() {
     useMapEvents({
       click(e) {
@@ -34,6 +43,26 @@ function Haltestellen() {
     });
     return null;
   }
+
+  // 🔍 Suche Ort
+  const sucheOrt = async () => {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${search}`
+    );
+    const data = await res.json();
+
+    if (data.length > 0) {
+      const lat = parseFloat(data[0].lat);
+      const lon = parseFloat(data[0].lon);
+
+      mapRef.current.setView([lat, lon], 15);
+
+      setForm({
+        ...form,
+        position: [lat, lon]
+      });
+    }
+  };
 
   // ➕ NEU
   const neu = () => {
@@ -75,7 +104,7 @@ function Haltestellen() {
   return (
     <div style={{ display:"flex", height:"100%" }}>
 
-      {/* 🔵 LISTE */}
+      {/* LISTE */}
       <div style={{
         width:300,
         background:"#1b1b2b",
@@ -84,7 +113,7 @@ function Haltestellen() {
       }}>
         <h3>Haltestellen</h3>
 
-        <button onClick={neu}>➕ Neu</button>
+        <button onClick={neu}>➕</button>
         <button onClick={edit}>✏️</button>
         <button onClick={loeschen}>🗑️</button>
 
@@ -102,7 +131,7 @@ function Haltestellen() {
         ))}
       </div>
 
-      {/* 🟢 DETAIL */}
+      {/* DETAIL */}
       <div style={{ flex:1, padding:20, color:"white" }}>
         {selected ? (
           <>
@@ -111,14 +140,16 @@ function Haltestellen() {
             <div style={{ height:400 }}>
               <MapContainer center={selected.position} zoom={15} style={{height:"100%"}}>
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
-                <Marker position={selected.position}/>
+                <Marker position={selected.position}>
+                  <Tooltip permanent>{selected.name}</Tooltip>
+                </Marker>
               </MapContainer>
             </div>
           </>
         ) : "Bitte auswählen"}
       </div>
 
-      {/* 🔥 MODAL */}
+      {/* MODAL */}
       {showModal && (
         <div style={modalBg}>
           <div style={modalBox}>
@@ -130,15 +161,34 @@ function Haltestellen() {
               onChange={(e)=>setForm({...form, name:e.target.value})}
             />
 
+            {/* 🔍 Suche */}
+            <input
+              placeholder="Ort suchen..."
+              value={search}
+              onChange={(e)=>setSearch(e.target.value)}
+            />
+            <button onClick={sucheOrt}>🔍</button>
+
+            {/* KARTE */}
             <div style={{ height:300, marginTop:10 }}>
-              <MapContainer center={[52.52,13.405]} zoom={13} style={{height:"100%"}}>
+              <MapContainer
+                center={[52.52,13.405]}
+                zoom={13}
+                whenCreated={(map)=>mapRef.current = map}
+                style={{height:"100%"}}
+              >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
                 <MapClick />
-                {form.position && <Marker position={form.position}/>}
+
+                {form.position && (
+                  <Marker position={form.position}>
+                    <Tooltip permanent>{form.name || "Neue Haltestelle"}</Tooltip>
+                  </Marker>
+                )}
               </MapContainer>
             </div>
 
-            <button onClick={speichern}>💾 Speichern</button>
+            <button onClick={speichern}>💾</button>
             <button onClick={()=>setShowModal(false)}>Abbrechen</button>
           </div>
         </div>
