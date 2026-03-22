@@ -8,22 +8,38 @@ import {
   useMap
 } from "react-leaflet";
 
-// 🧭 Klick → Strecke zeichnen
+// 🧭 DRAG ZEICHNEN (Maus halten + ziehen)
 function DrawPath({ path, setPath }) {
+  const [drawing, setDrawing] = useState(false);
+
   useMapEvents({
-    click(e) {
-      setPath([...path, [e.latlng.lat, e.latlng.lng]]);
+    mousedown(e) {
+      setDrawing(true);
+      setPath([[e.latlng.lat, e.latlng.lng]]);
+    },
+
+    mousemove(e) {
+      if (drawing) {
+        setPath(prev => [...prev, [e.latlng.lat, e.latlng.lng]]);
+      }
+    },
+
+    mouseup() {
+      setDrawing(false);
     }
   });
+
   return null;
 }
 
-// 🔥 AUTO ZOOM Controller
+// 🔥 AUTO ZOOM (nur einmal)
 function MapController({ focus }) {
   const map = useMap();
 
   if (focus) {
-    map.setView([focus.lat, focus.lng], 16);
+    map.setView([focus.lat, focus.lng], 15, {
+      animate: true
+    });
   }
 
   return null;
@@ -34,7 +50,7 @@ function RoutenEditor() {
   const [selectedStops, setSelectedStops] = useState([]);
   const [name, setName] = useState("");
   const [path, setPath] = useState([]);
-  const [focusStop, setFocusStop] = useState(null); // 🔥 NEU
+  const [focusStop, setFocusStop] = useState(null);
 
   // 📥 Stops laden
   useEffect(() => {
@@ -43,10 +59,13 @@ function RoutenEditor() {
       .then(data => setStops(data));
   }, []);
 
-  // ➕ Stop hinzufügen + Auto Zoom
+  // ➕ Stop hinzufügen (Zoom nur beim ersten!)
   const addStop = (stop) => {
-    setSelectedStops([...selectedStops, stop]);
-    setFocusStop(stop); // 🔥 Karte springt
+    setSelectedStops(prev => [...prev, stop]);
+
+    if (selectedStops.length === 0) {
+      setFocusStop(stop);
+    }
   };
 
   // ❌ Stop entfernen
@@ -141,9 +160,9 @@ function RoutenEditor() {
           <MapContainer
             center={[52.52, 13.405]}
             zoom={13}
-            style={{ height: 450 }}
+            style={{ height: 500 }}
           >
-            {/* 🛰️ Satellitenkarte */}
+            {/* 🛰️ SATELLIT */}
             <TileLayer
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
@@ -151,15 +170,15 @@ function RoutenEditor() {
             {/* 🔥 AUTO ZOOM */}
             <MapController focus={focusStop} />
 
-            {/* ✏️ Zeichnen */}
+            {/* ✏️ DRAG ZEICHNEN */}
             <DrawPath path={path} setPath={setPath} />
 
-            {/* 📍 Haltestellen Marker */}
+            {/* 📍 Haltestellen */}
             {selectedStops.map(s => (
               <Marker key={s.id} position={[s.lat, s.lng]} />
             ))}
 
-            {/* 🔴 Route */}
+            {/* 🔴 ROUTE */}
             {path.length > 1 && (
               <Polyline positions={path} color="red" />
             )}
