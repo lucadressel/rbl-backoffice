@@ -7,78 +7,75 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔥 MongoDB Verbindung
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log("MongoDB verbunden"))
-.catch(err => console.error(err));
+// 🔥 Mongo Verbindung (MIT LOG!)
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB verbunden"))
+  .catch(err => console.error("❌ Mongo Fehler:", err));
 
 // ==================== SCHEMAS ====================
 
-// Haltestellen
-const StopSchema = new mongoose.Schema({
+const Stop = mongoose.model("Stop", {
   name: String,
   lat: Number,
   lng: Number
 });
 
-const Stop = mongoose.model("Stop", StopSchema);
-
-// Routen
-const RouteSchema = new mongoose.Schema({
+const RouteModel = mongoose.model("Route", {
   name: String,
-  stops: [Number],
+  stops: [String], // 🔥 WICHTIG: Mongo IDs sind Strings!
   path: [[Number]]
 });
-
-const RouteModel = mongoose.model("Route", RouteSchema);
 
 // ==================== STOPS ====================
 
 app.post("/api/stops", async (req, res) => {
-  const stop = new Stop(req.body);
-  await stop.save();
-  res.json(stop);
+  try {
+    console.log("POST STOP:", req.body);
+
+    const stop = new Stop(req.body);
+    await stop.save();
+
+    res.json(stop);
+  } catch (err) {
+    console.error("❌ STOP ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get("/api/stops", async (req, res) => {
-  const stops = await Stop.find();
-  res.json(stops);
-});
-
-app.put("/api/stops/:id", async (req, res) => {
-  await Stop.findByIdAndUpdate(req.params.id, req.body);
-  res.json({ success: true });
-});
-
-app.delete("/api/stops/:id", async (req, res) => {
-  await Stop.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
+  try {
+    const stops = await Stop.find();
+    res.json(stops);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
 });
 
 // ==================== ROUTES ====================
 
 app.post("/api/routes", async (req, res) => {
-  const route = new RouteModel(req.body);
-  await route.save();
-  res.json(route);
+  try {
+    console.log("POST ROUTE:", req.body);
+
+    const route = new RouteModel(req.body);
+    await route.save();
+
+    res.json(route);
+  } catch (err) {
+    console.error("❌ ROUTE ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get("/api/routes", async (req, res) => {
-  const routes = await RouteModel.find();
-  res.json(routes);
-});
-
-app.put("/api/routes/:id", async (req, res) => {
-  await RouteModel.findByIdAndUpdate(req.params.id, req.body);
-  res.json({ success: true });
-});
-
-app.delete("/api/routes/:id", async (req, res) => {
-  await RouteModel.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
+  try {
+    const routes = await RouteModel.find();
+    res.json(routes);
+  } catch (err) {
+    console.error(err);
+    res.json([]);
+  }
 });
 
 // ==================== FRONTEND ====================
@@ -90,4 +87,4 @@ app.get("*", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log("Server läuft auf Port", PORT));
+app.listen(PORT, () => console.log("🚀 Server läuft auf Port", PORT));
