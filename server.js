@@ -1,40 +1,19 @@
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
+const fs = require("fs");
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const ROUTES_FILE = "./routes.json";
 
-let stops = [];
+// Laden beim Start
 let routes = [];
+if (fs.existsSync(ROUTES_FILE)) {
+  routes = JSON.parse(fs.readFileSync(ROUTES_FILE));
+}
 
-// ==================== STOPS ====================
+// Speichern Funktion
+const saveRoutesToFile = () => {
+  fs.writeFileSync(ROUTES_FILE, JSON.stringify(routes, null, 2));
+};
 
-app.post("/api/stops", (req, res) => {
-  const stop = { id: Date.now(), ...req.body };
-  stops.push(stop);
-  res.json(stop);
-});
-
-app.get("/api/stops", (req, res) => {
-  res.json(stops);
-});
-
-app.put("/api/stops/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  stops = stops.map(s => s.id === id ? { ...s, ...req.body } : s);
-  res.json({ success: true });
-});
-
-app.delete("/api/stops/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  stops = stops.filter(s => s.id !== id);
-  res.json({ success: true });
-});
-
-// ==================== ROUTES ====================
-
+// CREATE
 app.post("/api/routes", (req, res) => {
   const route = {
     id: Date.now(),
@@ -44,20 +23,36 @@ app.post("/api/routes", (req, res) => {
   };
 
   routes.push(route);
+  saveRoutesToFile(); // 🔥 speichern
+
   res.json(route);
 });
 
+// READ
 app.get("/api/routes", (req, res) => {
   res.json(routes);
 });
 
-// ==================== FRONTEND ====================
+// UPDATE
+app.put("/api/routes/:id", (req, res) => {
+  const id = parseInt(req.params.id);
 
-app.use(express.static(path.join(__dirname, "build")));
+  routes = routes.map(r =>
+    r.id === id ? { ...r, ...req.body } : r
+  );
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
+  saveRoutesToFile(); // 🔥 speichern
+
+  res.json({ success: true });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log("Server läuft auf Port", PORT));
+// DELETE
+app.delete("/api/routes/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+
+  routes = routes.filter(r => r.id !== id);
+
+  saveRoutesToFile(); // 🔥 speichern
+
+  res.json({ success: true });
+});
