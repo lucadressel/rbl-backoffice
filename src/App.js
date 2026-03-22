@@ -8,6 +8,7 @@ import Fahrer from "./pages/Fahrer";
 import Linien from "./pages/Linien";
 import Routen from "./pages/Routen";
 import Haltestellen from "./pages/Haltestellen";
+import Tarife from "./pages/Tarife";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -33,6 +34,7 @@ function App() {
           <Route path="/haltestellen" element={<Haltestellen />} />
           <Route path="/linien" element={<Linien />} />
           <Route path="/routen" element={<Routen />} />
+          <Route path="/tarife" element={<Tarife />} />
 
         </Routes>
       </Layout>

@@ -33,6 +33,8 @@ function Sidebar() {
 
         <Link to="/routen" style={link}>🧭 Routen</Link>
 
+	<Link to="/tarife" style={link}>🎟️ Tarife</Link>
+
       </nav>
 
     </div>
