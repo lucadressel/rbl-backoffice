@@ -1,171 +1,117 @@
 import { useState, useEffect } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  useMap,
-  useMapEvents
-} from "react-leaflet";
-
-// 🔍 Ortssuche Controller
-function SearchController({ search }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!search) return;
-
-    fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${search}`
-    )
-      .then(res => res.json())
-      .then(data => {
-        if (data.length > 0) {
-          const lat = parseFloat(data[0].lat);
-          const lon = parseFloat(data[0].lon);
-
-          map.setView([lat, lon], 16);
-        } else {
-          alert("Ort nicht gefunden");
-        }
-      });
-  }, [search, map]);
-
-  return null;
-}
-
-// 📍 Klick auf Karte
-function MapClick({ setPosition }) {
-  useMapEvents({
-    click(e) {
-      setPosition(e.latlng);
-    }
-  });
-  return null;
-}
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { supabase } from "../supabaseClient";
+import "leaflet/dist/leaflet.css";
 
 function Haltestellen() {
   const [name, setName] = useState("");
-  const [search, setSearch] = useState("");
-  const [searchTrigger, setSearchTrigger] = useState("");
   const [position, setPosition] = useState(null);
-  const [stops, setStops] = useState([]);
+  const [haltestellen, setHaltestellen] = useState([]);
 
-  // 🔄 Stops laden
-  const loadStops = async () => {
-    const res = await fetch("/api/stops");
-    const data = await res.json();
-    setStops(data);
+  // 📍 Klick auf Karte
+  function MapClick() {
+    useMapEvents({
+      click(e) {
+        setPosition(e.latlng);
+      },
+    });
+    return position ? <Marker position={position} /> : null;
+  }
+
+  // 🔄 Laden
+  const ladeHaltestellen = async () => {
+    const { data, error } = await supabase
+      .from("Haltestellen")
+      .select("*");
+
+    if (error) {
+      console.error(error);
+    } else {
+      setHaltestellen(data);
+    }
   };
 
   useEffect(() => {
-    loadStops();
+    ladeHaltestellen();
   }, []);
 
   // 💾 Speichern
-const saveStop = async () => {
-  console.log("Speichern gedrückt");
-
-  if (!name || !position) {
-    alert("Name und Position erforderlich");
-    return;
-  }
-
-  try {
-    const res = await fetch("/api/stops", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name,
-        lat: position.lat,
-        lng: position.lng
-      })
-    });
-
-    // ❗ WICHTIG: prüfen!
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Server Fehler:", text);
-      throw new Error("Server Fehler");
+  const speichern = async () => {
+    if (!name || !position) {
+      alert("Bitte Name und Position setzen");
+      return;
     }
 
-    const data = await res.json();
+    const { error } = await supabase
+      .from("Haltestellen")
+      .insert([
+        {
+          name: name,
+          lat: position.lat,
+          lng: position.lng,
+        },
+      ]);
 
-    alert("Haltestelle gespeichert");
+    if (error) {
+      console.error(error);
+      alert("Speichern fehlgeschlagen!");
+    } else {
+      alert("Gespeichert!");
+      setName("");
+      setPosition(null);
+      ladeHaltestellen();
+    }
+  };
 
-    setStops(prev => [...prev, data]);
+  // 🗑 Löschen
+  const loeschen = async (id) => {
+    const confirmDelete = window.confirm(
+      "Soll die Haltestelle wirklich gelöscht werden?"
+    );
 
-    setName("");
-    setPosition(null);
+    if (!confirmDelete) return;
 
-  } catch (err) {
-    console.error("FEHLER:", err);
-    alert("Speichern fehlgeschlagen!");
-  }
-};
-
-  // 🔍 Suche starten
-  const handleSearch = () => {
-    if (!search) return;
-    setSearchTrigger(search);
+    await supabase.from("Haltestellen").delete().eq("id", id);
+    ladeHaltestellen();
   };
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Haltestellen</h1>
+      <h2>Haltestellen</h2>
 
-      {/* Eingaben */}
-      <div style={{ display: "flex", gap: 10 }}>
-        <input
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+      <input
+        placeholder="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        style={{ padding: 10, marginBottom: 10 }}
+      />
+
+      <MapContainer
+        center={[52.52, 13.405]}
+        zoom={13}
+        style={{ height: 400 }}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapClick />
+      </MapContainer>
 
-        <input
-          placeholder="Ort suchen..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        <button onClick={handleSearch}>🔍</button>
-      </div>
-
-      {/* Karte */}
-      <div style={{ marginTop: 10 }}>
-        <MapContainer
-          center={[52.52, 13.405]}
-          zoom={13}
-          style={{ height: 400 }}
-        >
-          <TileLayer
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          />
-
-          {/* 🔍 Suche */}
-          <SearchController search={searchTrigger} />
-
-          {/* 📍 Klick */}
-          <MapClick setPosition={setPosition} />
-
-          {/* 📍 Marker */}
-          {position && (
-            <Marker position={[position.lat, position.lng]} />
-          )}
-        </MapContainer>
-      </div>
-
-      <button onClick={saveStop} style={{ marginTop: 10 }}>
+      <button onClick={speichern} style={{ marginTop: 10 }}>
         💾 Speichern
       </button>
 
-      {/* Liste */}
-      <h2 style={{ marginTop: 20 }}>Alle Haltestellen</h2>
+      <h3>Alle Haltestellen</h3>
 
-      {stops.map(s => (
-        <div key={s._id}>
-          {s.name} ({s.lat.toFixed(4)}, {s.lng.toFixed(4)})
+      {haltestellen.map((h) => (
+        <div key={h.id} style={{ marginBottom: 10 }}>
+          {h.name} ({h.lat}, {h.lng})
+          <button
+            onClick={() => loeschen(h.id)}
+            style={{ marginLeft: 10 }}
+          >
+            🗑 Löschen
+          </button>
         </div>
       ))}
     </div>
