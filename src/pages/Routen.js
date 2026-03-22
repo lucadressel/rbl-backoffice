@@ -40,8 +40,8 @@ function Routen() {
           {selected && (
             <MapContainer
               center={selected.path[0]}
-              zoom={13}
-              style={{ height: 400 }}
+              zoom={15}
+              style={{ height: 450 }}
             >
               <TileLayer
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"

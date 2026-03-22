@@ -1,46 +1,53 @@
-import { useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import Login from "./Login";
-import Layout from "./layout/Layout";
+import Sidebar from "./layout/Sidebar";
 
+// Seiten
+import Dashboard from "./pages/Dashboard";
 import Fahrer from "./pages/Fahrer";
+import Haltestellen from "./pages/Haltestellen";
 import Linien from "./pages/Linien";
 import Routen from "./pages/Routen";
-import Haltestellen from "./pages/Haltestellen";
-import Tarife from "./pages/Tarife";
 import RoutenEditor from "./pages/RoutenEditor";
+import Tarife from "./pages/Tarife";
 
 function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  // 🔐 LOGIN
-  if (!loggedIn) {
-    return <Login onLogin={() => setLoggedIn(true)} />;
-  }
-
   return (
-    <BrowserRouter>
-      <Layout onLogout={() => setLoggedIn(false)}>
-        <Routes>
+    <Router>
+      <div style={{ display: "flex" }}>
 
-          {/* 📊 DASHBOARD */}
-          <Route
-            path="/"
-            element={<h2 style={{ color: "white" }}>Dashboard</h2>}
-          />
+        {/* Sidebar */}
+        <Sidebar />
 
-          {/* MODULE */}
-          <Route path="/fahrer" element={<Fahrer />} />
-          <Route path="/haltestellen" element={<Haltestellen />} />
-          <Route path="/linien" element={<Linien />} />
-          <Route path="/routen" element={<Routen />} />
-          <Route path="/tarife" element={<Tarife />} />
-          <Route path="/routen-editor" element={<RoutenEditor />} />
+        {/* Main Content */}
+        <div style={{
+          flex: 1,
+          background: "#0f0f1a",
+          color: "#fff",
+          minHeight: "100vh",
+          padding: 20
+        }}>
+          <Routes>
 
-        </Routes>
-      </Layout>
-    </BrowserRouter>
+            <Route path="/" element={<Dashboard />} />
+
+            <Route path="/fahrer" element={<Fahrer />} />
+
+            <Route path="/haltestellen" element={<Haltestellen />} />
+
+            <Route path="/linien" element={<Linien />} />
+
+            <Route path="/routen" element={<Routen />} />
+
+            <Route path="/routen-editor" element={<RoutenEditor />} />
+
+            <Route path="/tarife" element={<Tarife />} />
+
+          </Routes>
+        </div>
+
+      </div>
+    </Router>
   );
 }
 

@@ -28,34 +28,29 @@ function RoutenEditor() {
       .then(data => setStops(data));
   }, []);
 
-  // ➕ Stop hinzufügen
   const addStop = (stop) => {
     setSelectedStops([...selectedStops, stop]);
   };
 
-  // ❌ Stop entfernen
   const removeStop = (index) => {
     const updated = [...selectedStops];
     updated.splice(index, 1);
     setSelectedStops(updated);
   };
 
-  // ↩️ letzten Punkt löschen
   const removeLastPoint = () => {
     const updated = [...path];
     updated.pop();
     setPath(updated);
   };
 
-  // 🗑️ Route löschen
   const clearPath = () => {
     setPath([]);
   };
 
-  // 💾 Speichern
   const saveRoute = async () => {
-    if (!name || selectedStops.length < 2) {
-      return alert("Mindestens 2 Haltestellen erforderlich");
+    if (!name || path.length < 2) {
+      return alert("Route nicht vollständig");
     }
 
     await fetch("/api/routes", {
@@ -71,7 +66,6 @@ function RoutenEditor() {
     });
 
     alert("Route gespeichert");
-
     setName("");
     setSelectedStops([]);
     setPath([]);
@@ -85,7 +79,7 @@ function RoutenEditor() {
         placeholder="Routenname"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        style={{ marginBottom: 20 }}
+        style={{ marginBottom: 10 }}
       />
 
       <div style={{ display: "flex", gap: 20 }}>
@@ -93,7 +87,6 @@ function RoutenEditor() {
         {/* HALTESTELLEN */}
         <div style={{ width: 250 }}>
           <h3>Haltestellen</h3>
-
           {stops.map(s => (
             <div key={s.id}>
               {s.name}
@@ -113,32 +106,28 @@ function RoutenEditor() {
             </div>
           ))}
 
-          <div style={{ marginTop: 20 }}>
-            <button onClick={removeLastPoint}>↩️ Punkt löschen</button>
-            <button onClick={clearPath}>🗑️ Strecke löschen</button>
-          </div>
+          <button onClick={removeLastPoint}>↩️ Punkt löschen</button>
+          <button onClick={clearPath}>🗑️ Strecke löschen</button>
         </div>
 
         {/* KARTE */}
         <div style={{ flex: 1 }}>
           <MapContainer
             center={[52.52, 13.405]}
-            zoom={13}
-            style={{ height: 400 }}
+            zoom={15}
+            style={{ height: 450 }}
           >
+            {/* 🛰️ BESTE SATELLITENKARTE */}
             <TileLayer
-  	    <TileLayer
-url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-/>
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            />
 
             <DrawPath path={path} setPath={setPath} />
 
-            {/* Haltestellen Marker */}
             {selectedStops.map(s => (
               <Marker key={s.id} position={[s.lat, s.lng]} />
             ))}
 
-            {/* Strecke */}
             {path.length > 1 && (
               <Polyline positions={path} color="red" />
             )}

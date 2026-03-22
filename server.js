@@ -40,7 +40,7 @@ app.post("/api/routes", (req, res) => {
     id: Date.now(),
     name: req.body.name,
     stops: req.body.stops,
-    path: req.body.path // 🔥 Fahrstrecke
+    path: req.body.path
   };
 
   routes.push(route);
