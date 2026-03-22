@@ -8,31 +8,17 @@ import {
   useMap
 } from "react-leaflet";
 
-// 🧭 DRAG ZEICHNEN (Maus halten + ziehen)
+// 🎯 Punkt für Punkt zeichnen (sauber!)
 function DrawPath({ path, setPath }) {
-  const [drawing, setDrawing] = useState(false);
-
   useMapEvents({
-    mousedown(e) {
-      setDrawing(true);
-      setPath([[e.latlng.lat, e.latlng.lng]]);
-    },
-
-    mousemove(e) {
-      if (drawing) {
-        setPath(prev => [...prev, [e.latlng.lat, e.latlng.lng]]);
-      }
-    },
-
-    mouseup() {
-      setDrawing(false);
+    click(e) {
+      setPath(prev => [...prev, [e.latlng.lat, e.latlng.lng]]);
     }
   });
-
   return null;
 }
 
-// 🔥 AUTO ZOOM (nur einmal)
+// 🔥 Auto Zoom (nur einmal)
 function MapController({ focus }) {
   const map = useMap();
 
@@ -77,12 +63,10 @@ function RoutenEditor() {
 
   // ↩️ letzten Punkt löschen
   const removeLastPoint = () => {
-    const updated = [...path];
-    updated.pop();
-    setPath(updated);
+    setPath(prev => prev.slice(0, -1));
   };
 
-  // 🗑️ Strecke löschen
+  // 🗑️ komplette Strecke löschen
   const clearPath = () => {
     setPath([]);
   };
@@ -153,6 +137,10 @@ function RoutenEditor() {
             <button onClick={removeLastPoint}>↩️ Punkt löschen</button>
             <button onClick={clearPath}>🗑️ Strecke löschen</button>
           </div>
+
+          <p style={{ marginTop: 10, fontSize: 12, color: "#aaa" }}>
+            👉 Klick auf Karte, um Punkte zu setzen (präzises Routing)
+          </p>
         </div>
 
         {/* KARTE */}
@@ -162,15 +150,14 @@ function RoutenEditor() {
             zoom={13}
             style={{ height: 500 }}
           >
-            {/* 🛰️ SATELLIT */}
+            {/* 🛰️ Satellit */}
             <TileLayer
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
 
-            {/* 🔥 AUTO ZOOM */}
             <MapController focus={focusStop} />
 
-            {/* ✏️ DRAG ZEICHNEN */}
+            {/* 🎯 Punkt-Zeichnen */}
             <DrawPath path={path} setPath={setPath} />
 
             {/* 📍 Haltestellen */}
@@ -178,7 +165,7 @@ function RoutenEditor() {
               <Marker key={s.id} position={[s.lat, s.lng]} />
             ))}
 
-            {/* 🔴 ROUTE */}
+            {/* 🔴 Route */}
             {path.length > 1 && (
               <Polyline positions={path} color="red" />
             )}
