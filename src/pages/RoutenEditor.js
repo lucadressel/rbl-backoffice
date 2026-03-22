@@ -1,10 +1,26 @@
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Polyline,
+  useMapEvents
+} from "react-leaflet";
+
+function DrawPath({ path, setPath }) {
+  useMapEvents({
+    click(e) {
+      setPath([...path, [e.latlng.lat, e.latlng.lng]]);
+    }
+  });
+  return null;
+}
 
 function RoutenEditor() {
   const [stops, setStops] = useState([]);
   const [selectedStops, setSelectedStops] = useState([]);
   const [name, setName] = useState("");
+  const [path, setPath] = useState([]);
 
   useEffect(() => {
     fetch("/api/stops")
@@ -24,6 +40,18 @@ function RoutenEditor() {
     setSelectedStops(updated);
   };
 
+  // ↩️ letzten Punkt löschen
+  const removeLastPoint = () => {
+    const updated = [...path];
+    updated.pop();
+    setPath(updated);
+  };
+
+  // 🗑️ Route löschen
+  const clearPath = () => {
+    setPath([]);
+  };
+
   // 💾 Speichern
   const saveRoute = async () => {
     if (!name || selectedStops.length < 2) {
@@ -37,7 +65,8 @@ function RoutenEditor() {
       },
       body: JSON.stringify({
         name,
-        stops: selectedStops.map(s => s.id)
+        stops: selectedStops.map(s => s.id),
+        path
       })
     });
 
@@ -45,10 +74,8 @@ function RoutenEditor() {
 
     setName("");
     setSelectedStops([]);
+    setPath([]);
   };
-
-  // 🗺️ Polyline Koordinaten
-  const polyline = selectedStops.map(s => [s.lat, s.lng]);
 
   return (
     <div style={{ padding: 20 }}>
@@ -64,11 +91,11 @@ function RoutenEditor() {
       <div style={{ display: "flex", gap: 20 }}>
 
         {/* HALTESTELLEN */}
-        <div style={{ width: 300 }}>
+        <div style={{ width: 250 }}>
           <h3>Haltestellen</h3>
 
           {stops.map(s => (
-            <div key={s.id} style={{ marginBottom: 5 }}>
+            <div key={s.id}>
               {s.name}
               <button onClick={() => addStop(s)}>➕</button>
             </div>
@@ -76,7 +103,7 @@ function RoutenEditor() {
         </div>
 
         {/* ROUTE */}
-        <div style={{ width: 300 }}>
+        <div style={{ width: 250 }}>
           <h3>Route</h3>
 
           {selectedStops.map((s, i) => (
@@ -85,6 +112,11 @@ function RoutenEditor() {
               <button onClick={() => removeStop(i)}>❌</button>
             </div>
           ))}
+
+          <div style={{ marginTop: 20 }}>
+            <button onClick={removeLastPoint}>↩️ Punkt löschen</button>
+            <button onClick={clearPath}>🗑️ Strecke löschen</button>
+          </div>
         </div>
 
         {/* KARTE */}
@@ -96,12 +128,16 @@ function RoutenEditor() {
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
+            <DrawPath path={path} setPath={setPath} />
+
+            {/* Haltestellen Marker */}
             {selectedStops.map(s => (
               <Marker key={s.id} position={[s.lat, s.lng]} />
             ))}
 
-            {polyline.length > 1 && (
-              <Polyline positions={polyline} />
+            {/* Strecke */}
+            {path.length > 1 && (
+              <Polyline positions={path} color="red" />
             )}
           </MapContainer>
         </div>

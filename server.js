@@ -11,26 +11,22 @@ let routes = [];
 
 // ==================== STOPS ====================
 
-// CREATE
 app.post("/api/stops", (req, res) => {
   const stop = { id: Date.now(), ...req.body };
   stops.push(stop);
   res.json(stop);
 });
 
-// READ
 app.get("/api/stops", (req, res) => {
   res.json(stops);
 });
 
-// UPDATE
 app.put("/api/stops/:id", (req, res) => {
   const id = parseInt(req.params.id);
   stops = stops.map(s => s.id === id ? { ...s, ...req.body } : s);
   res.json({ success: true });
 });
 
-// DELETE
 app.delete("/api/stops/:id", (req, res) => {
   const id = parseInt(req.params.id);
   stops = stops.filter(s => s.id !== id);
@@ -39,18 +35,18 @@ app.delete("/api/stops/:id", (req, res) => {
 
 // ==================== ROUTES ====================
 
-// CREATE ROUTE
 app.post("/api/routes", (req, res) => {
   const route = {
     id: Date.now(),
     name: req.body.name,
-    stops: req.body.stops
+    stops: req.body.stops,
+    path: req.body.path // 🔥 Fahrstrecke
   };
+
   routes.push(route);
   res.json(route);
 });
 
-// READ ROUTES
 app.get("/api/routes", (req, res) => {
   res.json(routes);
 });

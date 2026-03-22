@@ -23,19 +23,19 @@ function Sidebar() {
       {/* 🧭 NAVIGATION */}
       <nav style={{ display: "flex", flexDirection: "column", gap: 10 }}>
 
-        <Link to="/" style={link}>📊 Dashboard</Link>
+        <Link to="/" style={link}>📊 Hauptmenü</Link>
 
-        <Link to="/fahrer" style={link}>👨‍✈️ Fahrer</Link>
+        <Link to="/fahrer" style={link}>👨‍✈️ Fahrerverwaltung</Link>
 
-        <Link to="/haltestellen" style={link}>📍 Haltestellen</Link>
+        <Link to="/haltestellen" style={link}>📍 Haltestellenverwaltung</Link>
 
-        <Link to="/linien" style={link}>🚌 Linien</Link>
+        <Link to="/linien" style={link}>🚌 Linienverwaltung</Link>
 
-        <Link to="/routen" style={link}>🧭 Routen</Link>
+        <Link to="/routen" style={link}>🧭 Routenverwaltung</Link>
 
-	<Link to="/tarife" style={link}>🎟️ Tarife</Link>
+	<Link to="/tarife" style={link}>🎟️ Tarifverwaltung</Link>
 
-        <Link to="/routen-editor" style={link}>🧭 Routen Editor</Link>
+        <Link to="/routen-editor" style={link}>🛣️ Routen Editor</Link>
 
       </nav>
 
