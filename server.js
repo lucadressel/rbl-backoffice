@@ -1,58 +1,93 @@
-const fs = require("fs");
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const mongoose = require("mongoose");
 
-const ROUTES_FILE = "./routes.json";
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-// Laden beim Start
-let routes = [];
-if (fs.existsSync(ROUTES_FILE)) {
-  routes = JSON.parse(fs.readFileSync(ROUTES_FILE));
-}
+// 🔥 MongoDB Verbindung
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log("MongoDB verbunden"))
+.catch(err => console.error(err));
 
-// Speichern Funktion
-const saveRoutesToFile = () => {
-  fs.writeFileSync(ROUTES_FILE, JSON.stringify(routes, null, 2));
-};
+// ==================== SCHEMAS ====================
 
-// CREATE
-app.post("/api/routes", (req, res) => {
-  const route = {
-    id: Date.now(),
-    name: req.body.name,
-    stops: req.body.stops,
-    path: req.body.path
-  };
+// Haltestellen
+const StopSchema = new mongoose.Schema({
+  name: String,
+  lat: Number,
+  lng: Number
+});
 
-  routes.push(route);
-  saveRoutesToFile(); // 🔥 speichern
+const Stop = mongoose.model("Stop", StopSchema);
 
+// Routen
+const RouteSchema = new mongoose.Schema({
+  name: String,
+  stops: [Number],
+  path: [[Number]]
+});
+
+const RouteModel = mongoose.model("Route", RouteSchema);
+
+// ==================== STOPS ====================
+
+app.post("/api/stops", async (req, res) => {
+  const stop = new Stop(req.body);
+  await stop.save();
+  res.json(stop);
+});
+
+app.get("/api/stops", async (req, res) => {
+  const stops = await Stop.find();
+  res.json(stops);
+});
+
+app.put("/api/stops/:id", async (req, res) => {
+  await Stop.findByIdAndUpdate(req.params.id, req.body);
+  res.json({ success: true });
+});
+
+app.delete("/api/stops/:id", async (req, res) => {
+  await Stop.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
+// ==================== ROUTES ====================
+
+app.post("/api/routes", async (req, res) => {
+  const route = new RouteModel(req.body);
+  await route.save();
   res.json(route);
 });
 
-// READ
-app.get("/api/routes", (req, res) => {
+app.get("/api/routes", async (req, res) => {
+  const routes = await RouteModel.find();
   res.json(routes);
 });
 
-// UPDATE
-app.put("/api/routes/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-
-  routes = routes.map(r =>
-    r.id === id ? { ...r, ...req.body } : r
-  );
-
-  saveRoutesToFile(); // 🔥 speichern
-
+app.put("/api/routes/:id", async (req, res) => {
+  await RouteModel.findByIdAndUpdate(req.params.id, req.body);
   res.json({ success: true });
 });
 
-// DELETE
-app.delete("/api/routes/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-
-  routes = routes.filter(r => r.id !== id);
-
-  saveRoutesToFile(); // 🔥 speichern
-
+app.delete("/api/routes/:id", async (req, res) => {
+  await RouteModel.findByIdAndDelete(req.params.id);
   res.json({ success: true });
 });
+
+// ==================== FRONTEND ====================
+
+app.use(express.static(path.join(__dirname, "build")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log("Server läuft auf Port", PORT));
