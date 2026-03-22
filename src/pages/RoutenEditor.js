@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -8,8 +8,8 @@ import {
   useMap
 } from "react-leaflet";
 
-// 🎯 Punkt für Punkt zeichnen (sauber!)
-function DrawPath({ path, setPath }) {
+// 🎯 Punkt für Punkt zeichnen
+function DrawPath({ setPath }) {
   useMapEvents({
     click(e) {
       setPath(prev => [...prev, [e.latlng.lat, e.latlng.lng]]);
@@ -18,14 +18,23 @@ function DrawPath({ path, setPath }) {
   return null;
 }
 
-// 🔥 Auto Zoom (nur einmal)
-function MapController({ focus }) {
+// 🔥 MapController mit Zoom-Block + Reset
+function MapController({ focus, resetZoom }) {
   const map = useMap();
+  const hasZoomed = useRef(false);
 
-  if (focus) {
+  // 🔁 Reset (bei neuer Route)
+  if (resetZoom) {
+    hasZoomed.current = false;
+  }
+
+  // 🎯 Nur einmal zoomen
+  if (focus && !hasZoomed.current) {
     map.setView([focus.lat, focus.lng], 15, {
       animate: true
     });
+
+    hasZoomed.current = true;
   }
 
   return null;
@@ -37,6 +46,7 @@ function RoutenEditor() {
   const [name, setName] = useState("");
   const [path, setPath] = useState([]);
   const [focusStop, setFocusStop] = useState(null);
+  const [resetZoom, setResetZoom] = useState(false); // 🔥 neu
 
   // 📥 Stops laden
   useEffect(() => {
@@ -66,9 +76,23 @@ function RoutenEditor() {
     setPath(prev => prev.slice(0, -1));
   };
 
-  // 🗑️ komplette Strecke löschen
+  // 🗑️ Strecke löschen
   const clearPath = () => {
     setPath([]);
+  };
+
+  // ➕ Neue Route starten (RESET!)
+  const newRoute = () => {
+    setName("");
+    setSelectedStops([]);
+    setPath([]);
+    setFocusStop(null);
+
+    // 🔥 Zoom wieder erlauben
+    setResetZoom(true);
+
+    // Reset Flag wieder zurücksetzen
+    setTimeout(() => setResetZoom(false), 0);
   };
 
   // 💾 Route speichern
@@ -91,10 +115,7 @@ function RoutenEditor() {
 
     alert("Route gespeichert");
 
-    setName("");
-    setSelectedStops([]);
-    setPath([]);
-    setFocusStop(null);
+    newRoute(); // 🔥 direkt resetten
   };
 
   return (
@@ -107,6 +128,10 @@ function RoutenEditor() {
         onChange={(e) => setName(e.target.value)}
         style={{ marginBottom: 10 }}
       />
+
+      <button onClick={newRoute} style={{ marginBottom: 10 }}>
+        ➕ Neue Route
+      </button>
 
       <div style={{ display: "flex", gap: 20 }}>
 
@@ -138,8 +163,8 @@ function RoutenEditor() {
             <button onClick={clearPath}>🗑️ Strecke löschen</button>
           </div>
 
-          <p style={{ marginTop: 10, fontSize: 12, color: "#aaa" }}>
-            👉 Klick auf Karte, um Punkte zu setzen (präzises Routing)
+          <p style={{ fontSize: 12, color: "#aaa", marginTop: 10 }}>
+            👉 Klick auf Karte, um Punkte zu setzen
           </p>
         </div>
 
@@ -150,15 +175,16 @@ function RoutenEditor() {
             zoom={13}
             style={{ height: 500 }}
           >
-            {/* 🛰️ Satellit */}
+            {/* 🛰️ Satellitenkarte */}
             <TileLayer
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
 
-            <MapController focus={focusStop} />
+            {/* 🔥 FIXED ZOOM */}
+            <MapController focus={focusStop} resetZoom={resetZoom} />
 
-            {/* 🎯 Punkt-Zeichnen */}
-            <DrawPath path={path} setPath={setPath} />
+            {/* 🎯 Zeichnen */}
+            <DrawPath setPath={setPath} />
 
             {/* 📍 Haltestellen */}
             {selectedStops.map(s => (
