@@ -1,215 +1,144 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  useMapEvents,
-  Tooltip
-} from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import { useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-function Haltestellen() {
-  const [list, setList] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+// 🔧 FIX für Marker Icons
+delete L.Icon.Default.prototype._getIconUrl;
 
-  const [form, setForm] = useState({
-    name: "",
-    position: null
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
+  iconUrl: require("leaflet/dist/images/marker-icon.png"),
+  shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
+});
+
+// 📍 Klick auf Karte
+function MapClick({ setPosition }) {
+  useMapEvents({
+    click(e) {
+      setPosition(e.latlng);
+    },
   });
+  return null;
+}
 
-  const [search, setSearch] = useState("");
-  const mapRef = useRef();
+// 🧭 Map bewegt sich automatisch
+function MapController({ position }) {
+  const map = useMap();
 
-  // 🔄 Laden
-  useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("haltestellen")) || [];
-    setList(data);
-  }, []);
-
-  // 💾 Speichern
-  useEffect(() => {
-    localStorage.setItem("haltestellen", JSON.stringify(list));
-  }, [list]);
-
-  // 📍 Klick auf Karte
-  function MapClick() {
-    useMapEvents({
-      click(e) {
-        setForm({
-          ...form,
-          position: [e.latlng.lat, e.latlng.lng]
-        });
-      }
-    });
-    return null;
+  if (position) {
+    map.setView(position, 15);
   }
 
-  // 🔍 Suche Ort
-  const sucheOrt = async () => {
+  return null;
+}
+
+function Haltestellen() {
+  const [position, setPosition] = useState(null);
+  const [name, setName] = useState("");
+  const [search, setSearch] = useState("");
+
+  // 🔍 Ort suchen (OHNE map.setView!)
+  const searchLocation = async () => {
+  if (!search) return;
+
+  try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${search}`
+      `https://nominatim.openstreetmap.org/search?format=json&q=${search}`,
+      {
+        headers: {
+          "Accept": "application/json",
+          "User-Agent": "RBLBackoffice/1.0 (your@email.com)"
+        }
+      }
     );
+
     const data = await res.json();
 
     if (data.length > 0) {
-      const lat = parseFloat(data[0].lat);
-      const lon = parseFloat(data[0].lon);
-
-      mapRef.current.setView([lat, lon], 15);
-
-      setForm({
-        ...form,
-        position: [lat, lon]
+      setPosition({
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
       });
+    } else {
+      alert("Ort nicht gefunden");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Fehler bei der Ortssuche (API blockiert)");
+  }
+};
 
-  // ➕ NEU
-  const neu = () => {
-    setForm({ name: "", position: null });
-    setSelected(null);
-    setShowModal(true);
-  };
-
-  // ✏️ EDIT
-  const edit = () => {
-    if (!selected) return alert("Bitte auswählen");
-    setForm(selected);
-    setShowModal(true);
-  };
-
-  // 🗑️ DELETE
-  const loeschen = () => {
-    if (!selected) return;
-    setList(list.filter(h => h.id !== selected.id));
-    setSelected(null);
-  };
-
-  // 💾 SAVE
-  const speichern = () => {
-    if (!form.name || !form.position) {
-      alert("Name + Position!");
+  // 💾 Speichern (aktuell nur Console)
+  const saveStop = () => {
+    if (!name || !position) {
+      alert("Name und Position erforderlich!");
       return;
     }
 
-    if (selected) {
-      setList(list.map(h => h.id === selected.id ? form : h));
-    } else {
-      setList([...list, { ...form, id: Date.now() }]);
-    }
+    const stop = {
+      name,
+      lat: position.lat,
+      lng: position.lng,
+    };
 
-    setShowModal(false);
+    console.log("Gespeichert:", stop);
+
+    alert("Haltestelle gespeichert (aktuell nur lokal)");
+
+    // Reset
+    setName("");
+    setPosition(null);
   };
 
   return (
-    <div style={{ display:"flex", height:"100%" }}>
+    <div style={{ padding: 20 }}>
+      <h1>Neue Haltestelle</h1>
 
-      {/* LISTE */}
-      <div style={{
-        width:300,
-        background:"#1b1b2b",
-        padding:10,
-        color:"white"
-      }}>
-        <h3>Haltestellen</h3>
+      {/* 📝 Name */}
+      <input
+        placeholder="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        style={{ marginRight: 10 }}
+      />
 
-        <button onClick={neu}>➕</button>
-        <button onClick={edit}>✏️</button>
-        <button onClick={loeschen}>🗑️</button>
+      {/* 🔍 Suche */}
+      <input
+        placeholder="Ort suchen..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ marginRight: 10 }}
+      />
 
-        {list.map(h => (
-          <div key={h.id}
-            onClick={()=>setSelected(h)}
-            style={{
-              padding:10,
-              marginTop:5,
-              background: selected?.id === h.id ? "#3a3aff" : "#2a2a40",
-              cursor:"pointer"
-            }}>
-            {h.name}
-          </div>
-        ))}
+      <button onClick={searchLocation}>🔍</button>
+
+      {/* 🗺️ Karte */}
+      <div style={{ height: 400, marginTop: 20 }}>
+        <MapContainer
+          center={[52.52, 13.405]}
+          zoom={13}
+          style={{ height: "100%", borderRadius: 10 }}
+        >
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+          <MapClick setPosition={setPosition} />
+
+          <MapController position={position} />
+
+          {position && <Marker position={position} />}
+        </MapContainer>
       </div>
 
-      {/* DETAIL */}
-      <div style={{ flex:1, padding:20, color:"white" }}>
-        {selected ? (
-          <>
-            <h2>{selected.name}</h2>
-
-            <div style={{ height:400 }}>
-              <MapContainer center={selected.position} zoom={15} style={{height:"100%"}}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
-                <Marker position={selected.position}>
-                  <Tooltip permanent>{selected.name}</Tooltip>
-                </Marker>
-              </MapContainer>
-            </div>
-          </>
-        ) : "Bitte auswählen"}
-      </div>
-
-      {/* MODAL */}
-      {showModal && (
-        <div style={modalBg}>
-          <div style={modalBox}>
-            <h3>{selected ? "Bearbeiten" : "Neue Haltestelle"}</h3>
-
-            <input
-              placeholder="Name"
-              value={form.name}
-              onChange={(e)=>setForm({...form, name:e.target.value})}
-            />
-
-            {/* 🔍 Suche */}
-            <input
-              placeholder="Ort suchen..."
-              value={search}
-              onChange={(e)=>setSearch(e.target.value)}
-            />
-            <button onClick={sucheOrt}>🔍</button>
-
-            {/* KARTE */}
-            <div style={{ height:300, marginTop:10 }}>
-              <MapContainer
-                center={[52.52,13.405]}
-                zoom={13}
-                whenCreated={(map)=>mapRef.current = map}
-                style={{height:"100%"}}
-              >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
-                <MapClick />
-
-                {form.position && (
-                  <Marker position={form.position}>
-                    <Tooltip permanent>{form.name || "Neue Haltestelle"}</Tooltip>
-                  </Marker>
-                )}
-              </MapContainer>
-            </div>
-
-            <button onClick={speichern}>💾</button>
-            <button onClick={()=>setShowModal(false)}>Abbrechen</button>
-          </div>
-        </div>
-      )}
+      {/* 💾 Button */}
+      <button
+        onClick={saveStop}
+        style={{ marginTop: 20, padding: 10 }}
+      >
+        💾 Speichern
+      </button>
     </div>
   );
 }
-
-const modalBg = {
-  position:"fixed",
-  top:0,left:0,
-  width:"100%",height:"100%",
-  background:"rgba(0,0,0,0.6)"
-};
-
-const modalBox = {
-  background:"#1e1e2f",
-  padding:20,
-  width:400,
-  margin:"50px auto",
-  color:"white"
-};
 
 export default Haltestellen;
