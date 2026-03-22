@@ -62,11 +62,15 @@ function Haltestellen() {
   }, []);
 
   // 💾 Speichern
-  const saveStop = async () => {
-    if (!name || !position) {
-      return alert("Name und Position erforderlich");
-    }
+const saveStop = async () => {
+  console.log("Speichern gedrückt");
 
+  if (!name || !position) {
+    alert("Name und Position erforderlich");
+    return;
+  }
+
+  try {
     const res = await fetch("/api/stops", {
       method: "POST",
       headers: {
@@ -79,15 +83,27 @@ function Haltestellen() {
       })
     });
 
+    // ❗ WICHTIG: prüfen!
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Server Fehler:", text);
+      throw new Error("Server Fehler");
+    }
+
     const data = await res.json();
+
+    alert("Haltestelle gespeichert");
 
     setStops(prev => [...prev, data]);
 
     setName("");
     setPosition(null);
 
-    alert("Haltestelle gespeichert");
-  };
+  } catch (err) {
+    console.error("FEHLER:", err);
+    alert("Speichern fehlgeschlagen!");
+  }
+};
 
   // 🔍 Suche starten
   const handleSearch = () => {
