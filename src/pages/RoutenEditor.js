@@ -4,9 +4,11 @@ import {
   TileLayer,
   Marker,
   Polyline,
-  useMapEvents
+  useMapEvents,
+  useMap
 } from "react-leaflet";
 
+// 🧭 Klick → Strecke zeichnen
 function DrawPath({ path, setPath }) {
   useMapEvents({
     click(e) {
@@ -16,38 +18,57 @@ function DrawPath({ path, setPath }) {
   return null;
 }
 
+// 🔥 AUTO ZOOM Controller
+function MapController({ focus }) {
+  const map = useMap();
+
+  if (focus) {
+    map.setView([focus.lat, focus.lng], 16);
+  }
+
+  return null;
+}
+
 function RoutenEditor() {
   const [stops, setStops] = useState([]);
   const [selectedStops, setSelectedStops] = useState([]);
   const [name, setName] = useState("");
   const [path, setPath] = useState([]);
+  const [focusStop, setFocusStop] = useState(null); // 🔥 NEU
 
+  // 📥 Stops laden
   useEffect(() => {
     fetch("/api/stops")
       .then(res => res.json())
       .then(data => setStops(data));
   }, []);
 
+  // ➕ Stop hinzufügen + Auto Zoom
   const addStop = (stop) => {
     setSelectedStops([...selectedStops, stop]);
+    setFocusStop(stop); // 🔥 Karte springt
   };
 
+  // ❌ Stop entfernen
   const removeStop = (index) => {
     const updated = [...selectedStops];
     updated.splice(index, 1);
     setSelectedStops(updated);
   };
 
+  // ↩️ letzten Punkt löschen
   const removeLastPoint = () => {
     const updated = [...path];
     updated.pop();
     setPath(updated);
   };
 
+  // 🗑️ Strecke löschen
   const clearPath = () => {
     setPath([]);
   };
 
+  // 💾 Route speichern
   const saveRoute = async () => {
     if (!name || path.length < 2) {
       return alert("Route nicht vollständig");
@@ -66,9 +87,11 @@ function RoutenEditor() {
     });
 
     alert("Route gespeichert");
+
     setName("");
     setSelectedStops([]);
     setPath([]);
+    setFocusStop(null);
   };
 
   return (
@@ -87,8 +110,9 @@ function RoutenEditor() {
         {/* HALTESTELLEN */}
         <div style={{ width: 250 }}>
           <h3>Haltestellen</h3>
+
           {stops.map(s => (
-            <div key={s.id}>
+            <div key={s.id} style={{ marginBottom: 5 }}>
               {s.name}
               <button onClick={() => addStop(s)}>➕</button>
             </div>
@@ -106,28 +130,36 @@ function RoutenEditor() {
             </div>
           ))}
 
-          <button onClick={removeLastPoint}>↩️ Punkt löschen</button>
-          <button onClick={clearPath}>🗑️ Strecke löschen</button>
+          <div style={{ marginTop: 10 }}>
+            <button onClick={removeLastPoint}>↩️ Punkt löschen</button>
+            <button onClick={clearPath}>🗑️ Strecke löschen</button>
+          </div>
         </div>
 
         {/* KARTE */}
         <div style={{ flex: 1 }}>
           <MapContainer
             center={[52.52, 13.405]}
-            zoom={15}
+            zoom={13}
             style={{ height: 450 }}
           >
-            {/* 🛰️ BESTE SATELLITENKARTE */}
+            {/* 🛰️ Satellitenkarte */}
             <TileLayer
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
 
+            {/* 🔥 AUTO ZOOM */}
+            <MapController focus={focusStop} />
+
+            {/* ✏️ Zeichnen */}
             <DrawPath path={path} setPath={setPath} />
 
+            {/* 📍 Haltestellen Marker */}
             {selectedStops.map(s => (
               <Marker key={s.id} position={[s.lat, s.lng]} />
             ))}
 
+            {/* 🔴 Route */}
             {path.length > 1 && (
               <Polyline positions={path} color="red" />
             )}
