@@ -1,15 +1,5 @@
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import { useState, useEffect } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-
-// 🔧 Icon Fix
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
-  iconUrl: require("leaflet/dist/images/marker-icon.png"),
-  shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
-});
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 
 function MapClick({ setPosition }) {
   useMapEvents({
@@ -20,21 +10,12 @@ function MapClick({ setPosition }) {
   return null;
 }
 
-function MapController({ position }) {
-  const map = useMap();
-  if (position) map.setView(position, 15);
-  return null;
-}
-
 function Haltestellen() {
-  const [stops, setStops] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [position, setPosition] = useState(null);
   const [name, setName] = useState("");
-  const [search, setSearch] = useState("");
-  const [showForm, setShowForm] = useState(false);
+  const [position, setPosition] = useState(null);
+  const [stops, setStops] = useState([]);
 
-  // 📥 Laden
+  // 🔥 Stops laden
   const loadStops = async () => {
     const res = await fetch("/api/stops");
     const data = await res.json();
@@ -45,160 +26,83 @@ function Haltestellen() {
     loadStops();
   }, []);
 
-  // 🔍 Suche
-  const searchLocation = async () => {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(search)}`
-    );
-    const data = await res.json();
-
-    if (data.length > 0) {
-      setPosition({
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon)
-      });
-    }
-  };
-
-  // 💾 Speichern
+  // 🔥 SPEICHERN (FIXED)
   const saveStop = async () => {
-    if (!name || !position) return alert("Fehlt!");
-
-    const body = { name, lat: position.lat, lng: position.lng };
-
-    if (selected) {
-      await fetch(`/api/stops/${selected.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-    } else {
-      await fetch("/api/stops", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
+    if (!name || !position) {
+      return alert("Name und Position erforderlich");
     }
 
-    resetForm();
-    loadStops();
-  };
+    try {
+      const res = await fetch("/api/stops", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name,
+          lat: position.lat,
+          lng: position.lng
+        })
+      });
 
-  // ✏️ Bearbeiten
-  const editStop = (s) => {
-    setSelected(s);
-    setName(s.name);
-    setPosition({ lat: s.lat, lng: s.lng });
-    setShowForm(true);
-  };
+      const data = await res.json();
 
-  // 🗑️ Löschen
-  const deleteStop = async (s) => {
-    if (!window.confirm("Soll die Haltestelle gelöscht werden?")) return;
+      console.log("GESPEICHERT:", data);
 
-    await fetch(`/api/stops/${s.id}`, {
-      method: "DELETE"
-    });
+      alert("Haltestelle gespeichert");
 
-    loadStops();
-  };
+      // 🔥 UI aktualisieren
+      setStops(prev => [...prev, data]);
 
-  // ➕ Neu
-  const newStop = () => {
-    resetForm();
-    setShowForm(true);
-  };
+      // 🔄 Reset
+      setName("");
+      setPosition(null);
 
-  const resetForm = () => {
-    setSelected(null);
-    setName("");
-    setPosition(null);
-    setSearch("");
-    setShowForm(false);
+    } catch (err) {
+      console.error("FEHLER:", err);
+      alert("Fehler beim Speichern");
+    }
   };
 
   return (
     <div style={{ padding: 20 }}>
       <h1>Haltestellen</h1>
 
-      <button onClick={newStop}>➕ Neue Haltestelle</button>
+      <input
+        placeholder="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
 
-      <div style={{ display: "flex", marginTop: 20, gap: 20 }}>
+      <div style={{ marginTop: 10 }}>
+        <MapContainer
+          center={[52.52, 13.405]}
+          zoom={13}
+          style={{ height: 400 }}
+        >
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          />
 
-        {/* 📋 LISTE */}
-        <div style={{
-          width: 300,
-          background: "#1f1f2e",
-          padding: 10,
-          borderRadius: 10,
-          maxHeight: 500,
-          overflowY: "auto"
-        }}>
-          <h3>Alle</h3>
+          <MapClick setPosition={setPosition} />
 
-          {stops.map(s => (
-            <div
-              key={s.id}
-              style={{
-                padding: 10,
-                marginBottom: 5,
-                background: "#2a2a40",
-                borderRadius: 6
-              }}
-            >
-              <b>{s.name}</b>
-
-              <div style={{ marginTop: 5 }}>
-                <button onClick={() => editStop(s)}>✏️</button>
-                <button onClick={() => deleteStop(s)}>🗑️</button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 🗺️ FORM + KARTE */}
-        {showForm && (
-          <div style={{ flex: 1 }}>
-
-            <div style={{ marginBottom: 10 }}>
-              <input
-                placeholder="Name"
-                value={name}
-                onChange={e => setName(e.target.value)}
-              />
-
-              <input
-                placeholder="Ort suchen..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ marginLeft: 10 }}
-              />
-
-              <button onClick={searchLocation}>🔍</button>
-            </div>
-
-            <div style={{ height: 400 }}>
-              <MapContainer center={[52.52, 13.405]} zoom={13} style={{ height: "100%" }}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-                <MapClick setPosition={setPosition} />
-                <MapController position={position} />
-
-                {position && <Marker position={position} />}
-              </MapContainer>
-            </div>
-
-            <button onClick={saveStop} style={{ marginTop: 10 }}>
-              💾 Speichern
-            </button>
-
-            <button onClick={resetForm} style={{ marginLeft: 10 }}>
-              Abbrechen
-            </button>
-
-          </div>
-        )}
+          {position && (
+            <Marker position={[position.lat, position.lng]} />
+          )}
+        </MapContainer>
       </div>
+
+      <button onClick={saveStop} style={{ marginTop: 10 }}>
+        💾 Speichern
+      </button>
+
+      <h2 style={{ marginTop: 20 }}>Alle Haltestellen</h2>
+
+      {stops.map(s => (
+        <div key={s._id}>
+          {s.name} ({s.lat}, {s.lng})
+        </div>
+      ))}
     </div>
   );
 }
