@@ -1,25 +1,18 @@
-// server.js
-
 import express from "express";
-import cors from "cors";
+import path from "path";
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// React Build Ordner
+const __dirname = new URL('.', import.meta.url).pathname;
 
-// Test Route
-app.get("/", (req, res) => {
-  res.send("✅ Server läuft ohne MongoDB");
+app.use(express.static(path.join(__dirname, "build")));
+
+// Alle Requests → React App
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
-// Optional: Health Check für Render
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "OK" });
-});
-
-// Server starten
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
