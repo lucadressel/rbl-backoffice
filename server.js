@@ -1,17 +1,24 @@
 const express = require("express");
-const path = require("path");
+const cors = require("cors");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+app.use(cors());
+app.use(express.json());
 
-// React Build ausliefern
-app.use(express.static(path.join(__dirname, "build")));
+let stops = [];
 
-// Fallback für React Routing
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
+// 📥 Speichern
+app.post("/api/stops", (req, res) => {
+  const stop = req.body;
+  stops.push(stop);
+  res.json({ success: true });
 });
 
-app.listen(PORT, () => {
-  console.log("Server läuft auf Port " + PORT);
+// 📤 Alle laden
+app.get("/api/stops", (req, res) => {
+  res.json(stops);
+});
+
+app.listen(5000, () => {
+  console.log("Server läuft auf Port 5000");
 });
